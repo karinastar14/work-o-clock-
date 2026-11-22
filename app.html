@@ -227,7 +227,7 @@ p{margin:0;color:var(--mute);max-width:34ch}
 .addsvg{position:absolute;left:0;top:0;display:block;pointer-events:none;overflow:visible}
 .addsvg path{fill:none;stroke:var(--c);stroke-width:3;stroke-linejoin:miter;stroke-miterlimit:4;transition:stroke .25s}
 .addsvg .dim path{opacity:.22}
-.addback{position:absolute;left:16px;top:calc(10px + env(safe-area-inset-top,0px));z-index:5;background:rgba(11,11,12,.8)}
+.addback{position:absolute;left:16px;bottom:calc(10px + env(safe-area-inset-bottom,0px));z-index:5;background:rgba(11,11,12,.8)}
 .asec{position:relative;height:var(--H,100vh);scroll-snap-align:start;display:flex;align-items:center;padding:0 22px 0 92px}
 .ac{width:100%;display:flex;flex-direction:column;gap:18px;opacity:0;transform:translateY(-36px);transition:opacity .6s ease,transform .6s cubic-bezier(.2,.9,.3,1)}
 .asec.in .ac{opacity:1;transform:none}
@@ -282,6 +282,15 @@ p{margin:0;color:var(--mute);max-width:34ch}
 .splw{font-weight:800;font-size:26px;letter-spacing:.01em;opacity:0;transition:opacity .6s .9s}
 #s-splash.go .splw{opacity:1}
 @media (prefers-reduced-motion:reduce){.spl circle{stroke-dashoffset:0}.splw{opacity:1;transition:none}}
+
+/* clock screen: clock centred in the page, plus top-left, list scrolls under it */
+#s-clock .clockwrap{position:absolute;left:0;right:0;top:0;bottom:0;display:flex;align-items:center;justify-content:center;padding:0;pointer-events:none}
+#s-clock .clockwrap canvas{pointer-events:auto}
+#s-clock .top{position:relative;z-index:3;padding-left:60px}
+#s-clock .fab{left:16px;bottom:auto;top:10px;transform:none;width:48px;height:48px;z-index:3}
+#s-clock .fab:active{transform:scale(.94)}
+#s-clock .list{position:absolute;left:16px;right:16px;top:calc(50% + min(160px,19vh) + 20px);bottom:0;flex:none;padding:4px 0 28px;overflow-y:auto}
+#s-clock .empty{padding-top:84px}
 </style>
 
 </head><body>
@@ -561,21 +570,21 @@ function items(){
     return {color:t.color,p:clamp(t.elapsed/(t.mins*60),0,1),born:t.born||0,doneAt:t.doneAt||0,run:t.status==='running'};
   });
   var list=S.tracks.length?S.tracks.map(function(id){return trackOf(id).hex}):['#3A3A3F','#3A3A3F','#3A3A3F'];
-  return list.map(function(c,i){return {color:c,p:0,born:clockShown+i*180,doneAt:0,ghost:true}});
+  return list.map(function(c,i){return {color:i===0?'#FF5500':c,p:0,born:clockShown+i*180,doneAt:0,ghost:true,first:i===0}});
 }
 function drawClock(){
   var f=fit(cv);if(!f.w)return;
   var k=f.d*f.w/340;cx.setTransform(k,0,0,k,0,0);cx.clearRect(0,0,340,340);
   var now=Date.now(),list=items();
   list.forEach(function(it,i){
-    var r=62+i*15,age=(now-it.born)/1000;if(age<0)return;
+    var r=76+i*14,age=(now-it.born)/1000;if(age<0)return;
     var b=easeOut(age/1.1),pulse=it.doneAt?clamp(1-(now-it.doneAt)/1400,0,1):0;
     cx.save();
     if(pulse>0){cx.shadowColor=it.color;cx.shadowBlur=24*pulse}
     cx.lineWidth=2;cx.strokeStyle=it.color;
     [-4,0,4].forEach(function(off){
       var rr=r+off;
-      cx.globalAlpha=1;cx.strokeStyle=it.ghost?it.color:'#3A3935';if(it.ghost)cx.globalAlpha=.5;
+      cx.globalAlpha=1;cx.strokeStyle=it.ghost?it.color:'#3A3935';if(it.ghost)cx.globalAlpha=it.first?1:.5;
       cx.beginPath();cx.arc(170,170,rr,Q,Q+TAU*b);cx.stroke();
       cx.strokeStyle=it.color;
       if(it.p>0){cx.globalAlpha=1;cx.beginPath();cx.arc(170,170,rr,Q,Q+TAU*it.p*b);cx.stroke()}
@@ -889,7 +898,11 @@ function commit(){
     crossToClock();
   },reduce?0:160);
 }
-$('aBack').onclick=function(){if(pre)dropPre();if(cameFrom==='quiz')show('quiz',-1);else show('clock',-1)};
+$('aBack').onclick=function(){
+  clearTimeout(autoT);
+  var sc=$('addscroll'),sec=addH?Math.round(sc.scrollTop/addH):3;
+  if(sec<3){sc.scrollTo({top:addH*(sec+1),behavior:reduce?'auto':'smooth'});return}
+  if(pre)dropPre();if(cameFrom==='quiz')show('quiz',-1);else show('clock',-1)};
 $('addscroll').addEventListener('scroll',function(){if(!addRaf)addRaf=requestAnimationFrame(function(){addRaf=0;addScroll()})},{passive:true});
 window.addEventListener('resize',function(){if(scr==='add')addLayout()});
 $('fab').onclick=function(){startAdd('clock')};
