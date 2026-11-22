@@ -448,6 +448,7 @@ function hsl2hex(h,s,l){s/=100;l/=100;var a=s*Math.min(l,1-l);
 function rng(str){var s=0;for(var i=0;i<str.length;i++)s=(s*31+str.charCodeAt(i))%2147483647;if(s<=0)s=7;return function(){s=(s*16807)%2147483647;return s/2147483647}}
 
 /* state */
+try{if(/[?&]fresh=1/.test(location.search))localStorage.removeItem(KEY)}catch(e){}
 var S={tasks:[],tracks:[],history:[],seen:false,speed:1,lastColor:'',sampleOn:false};
 try{var raw=localStorage.getItem(KEY);if(raw){var p=JSON.parse(raw);for(var k in p)S[k]=p[k]}}catch(e){}
 if(!S.history)S.history=[];
